@@ -29,7 +29,7 @@ const MODEL_MAPPING = {
   'gpt-4': 'qwen/qwen3.5-122b-a10b',
   'gpt-4.5': 'qwen/qwen3.5-397b-a17b',
   'gpt-4-turbo': 'deepseek-ai/deepseek-v3.2',
-  'gpt-4o': 'deepseek-ai/deepseek-v3.1',
+  'gpt-4o': 'deepseek-ai/deepseek-v4-pro',
   'claude-3-opus': 'openai/gpt-oss-120b',
   'claude-3-sonnet': 'openai/gpt-oss-20b',
   'gemini-pro': 'moonshotai/kimi-k2.5' 
