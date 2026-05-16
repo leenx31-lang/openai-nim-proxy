@@ -22,7 +22,6 @@ const ENABLE_THINKING_MODE = true; // Set to true to enable chat_template_kwargs
 
 // Model mapping (adjust based on available NIM models)
 const MODEL_MAPPING = {
-  'gpt-3.5': 'z-ai/glm-5_1',
   'gpt-3.5-turbo': 'z-ai/glm-5.1',
   'gpt-5': 'z-ai/glm-4_7',
   'gpt-5-turbo': 'z-ai/glm-4.7',
@@ -34,7 +33,7 @@ const MODEL_MAPPING = {
   'gpt-4o-mini': 'deepseek-ai/deepseek-v4-flash',
   'claude-3-opus': 'openai/gpt-oss-120b',
   'claude-3-sonnet': 'openai/gpt-oss-20b',
-  'gemini-pro': 'moonshotai/kimi-k2.5' 
+  'gemini-pro': 'moonshotai/kimi-k2.6' 
 };
 
 // Health check endpoint
