@@ -8,32 +8,27 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '100mb' })); app.use(express.urlencoded({ limit: '100mb', extended: true }));;
+app.use(express.json());
 
 // NVIDIA NIM API configuration
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
 // 🔥 REASONING DISPLAY TOGGLE - Shows/hides reasoning in output
-const SHOW_REASONING = true; // Set to true to show reasoning with <think> tags
+const SHOW_REASONING = false; // Set to true to show reasoning with <think> tags
 
 // 🔥 THINKING MODE TOGGLE - Enables thinking for specific models that support it
-const ENABLE_THINKING_MODE = true; // Set to true to enable chat_template_kwargs thinking parameter
+const ENABLE_THINKING_MODE = false; // Set to true to enable chat_template_kwargs thinking parameter
 
 // Model mapping (adjust based on available NIM models)
 const MODEL_MAPPING = {
-  'gpt-3.5-turbo': 'z-ai/glm-5.2',
-  'gpt-5': 'z-ai/glm-4_7',
-  'gpt-5-turbo': 'z-ai/glm-4.7',
-  'gpt-4': 'qwen/qwen3.5-122b-a10b',
-  'gpt-4.5': 'qwen/qwen3.5-397b-a17b',
-  'gpt-4-turbo': 'deepseek-ai/deepseek-v3.2',
-  'gpt444': 'deepseek-ai/deepseek-v4-pro',
-  'gpt-5.4': 'deepseek-ai/deepseek-v4-pro:latest',
-  'gpt-4o-mini': 'deepseek-ai/deepseek-v4-flash',
+  'gpt-3.5-turbo': 'nvidia/llama-3.1-nemotron-ultra-253b-v1',
+  'gpt-4': 'qwen/qwen3-coder-480b-a35b-instruct',
+  'gpt-4-turbo': 'moonshotai/kimi-k2-instruct-0905',
+  'gpt-4o': 'deepseek-ai/deepseek-v3.1',
   'claude-3-opus': 'openai/gpt-oss-120b',
   'claude-3-sonnet': 'openai/gpt-oss-20b',
-  'gemini-pro': 'moonshotai/kimi-k2.6' 
+  'gemini-pro': 'qwen/qwen3-next-80b-a3b-thinking' 
 };
 
 // Health check endpoint
@@ -218,81 +213,17 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.json(openaiResponse);
     }
     
-  }  catch (error) {
-  console.error('Proxy error:', error.message);
-
-  const requestedStream = Boolean(req.body?.stream);
-  let errorData = null;
-
-  if (error.response && error.response.data) {
-    const isStreamErrorData = typeof error.response.data.on === 'function';
-
-    if (requestedStream && isStreamErrorData) {
-      console.error('--- NVIDIA NIM Error Details (Stream) ---');
-      console.error('Upstream returned an error while in stream mode.');
-      console.error('Cannot safely stringify stream response data.');
-      console.error('---------------------------------------');
-
-      errorData = {
-        error: {
-          message: 'Upstream API returned an error while in stream mode. See proxy logs.',
-          type: 'upstream_stream_error'
-        }
-      };
-    } else {
-      console.error('--- NVIDIA NIM Error Details ---');
-
-      try {
-        console.error(JSON.stringify(error.response.data, null, 2));
-      } catch (stringifyError) {
-        console.error('Could not stringify error response data.');
+  } catch (error) {
+    console.error('Proxy error:', error.message);
+    
+    res.status(error.response?.status || 500).json({
+      error: {
+        message: error.message || 'Internal server error',
+        type: 'invalid_request_error',
+        code: error.response?.status || 500
       }
-
-      console.error('--------------------------------');
-
-      errorData = error.response.data;
-    }
-  } else {
-    console.error('No response data received from NVIDIA. This might be a network/timeout issue.');
+    });
   }
-
-  const statusCode = error.response?.status || 500;
-
-  if (res.headersSent) {
-    if (requestedStream) {
-      res.write(
-        `data: ${JSON.stringify({
-          error: {
-            message:
-              errorData?.error?.message ||
-              error.message ||
-              'Internal server error',
-            type: errorData?.error?.type || 'invalid_request_error',
-            code: statusCode
-          }
-        })}\n\n`
-      );
-    }
-
-    return res.end();
-  }
-
-  return res.status(statusCode).json({
-    error: {
-      message:
-        errorData?.error?.message ||
-        errorData?.message ||
-        error.message ||
-        'Internal server error',
-      type:
-        errorData?.error?.type ||
-        'invalid_request_error',
-      code: statusCode,
-      nim_error_details: errorData
-    }
-  });
-}
-
 });
 
 // Catch-all for unsupported endpoints
