@@ -221,11 +221,22 @@ app.post('/v1/chat/completions', async (req, res) => {
   } catch (error) {
     console.error('Proxy error:', error.message);
     
+    // 🔥 ADD THIS: Log the exact error details returned by NVIDIA NIM
+    if (error.response && error.response.data) {
+      console.error('--- NVIDIA NIM Error Details ---');
+      console.error(JSON.stringify(error.response.data, null, 2));
+      console.error('--------------------------------');
+    } else {
+      console.error('No response data received from NVIDIA. This might be a network/timeout issue.');
+    }
+
+    // 🔥 UPDATE THIS: Send the actual NIM error back to your frontend/client
     res.status(error.response?.status || 500).json({
       error: {
-        message: error.message || 'Internal server error',
-        type: 'invalid_request_error',
-        code: error.response?.status || 500
+        message: error.response?.data?.error?.message || error.message || 'Internal server error',
+        type: error.response?.data?.error?.type || 'invalid_request_error',
+        code: error.response?.status || 500,
+        nim_error_details: error.response?.data // This will include the full error from NVIDIA
       }
     });
   }
