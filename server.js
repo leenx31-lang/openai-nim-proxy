@@ -180,9 +180,16 @@ app.post('/v1/chat/completions', async (req, res) => {
       
       response.data.on('end', () => res.end());
       response.data.on('error', (err) => {
-        console.error('Stream error:', err);
-        res.end();
-      });
+  console.error('Stream error:', err.message || err);
+  res.write(`data: ${JSON.stringify({
+    error: {
+      message: err.message || 'Stream error',
+      type: 'stream_error',
+      code: 500
+    }
+  })}\n\n`);
+  res.end();
+});
     } else {
       // Transform NIM response to OpenAI format with reasoning
       const openaiResponse = {
