@@ -218,43 +218,81 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.json(openaiResponse);
     }
     
-  } } catch (error) {
-    console.error('Proxy error:', error.message);
-    
-    let errorData = null;
+  }  catch (error) {
+  console.error('Proxy error:', error.message);
 
-    if (error.response && error.response.data) {
-      // Check if the error data is a Node.js Stream (happens when stream=true and an error occurs)
-      if (stream && typeof error.response.data.on === 'function') {
-        console.error('--- NVIDIA NIM Error Details (Stream) ---');
-        console.error('Upstream returned an error while in stream mode. Cannot safely stringify stream object.');
-        console.error('---------------------------------------');
-        
-        // We avoid stringifying the stream to prevent the TLSSocket circular structure crash.
-        errorData = { 
-          message: "Upstream API returned an error while in stream mode. See proxy logs." 
-        };
-      } else {
-        // It is safe to stringify normal JSON/objects
-        console.error('--- NVIDIA NIM Error Details ---');
-        console.error(JSON.stringify(error.response.data, null, 2));
-        console.error('--------------------------------');
-        errorData = error.response.data;
-      }
+  const requestedStream = Boolean(req.body?.stream);
+  let errorData = null;
+
+  if (error.response && error.response.data) {
+    const isStreamErrorData = typeof error.response.data.on === 'function';
+
+    if (requestedStream && isStreamErrorData) {
+      console.error('--- NVIDIA NIM Error Details (Stream) ---');
+      console.error('Upstream returned an error while in stream mode.');
+      console.error('Cannot safely stringify stream response data.');
+      console.error('---------------------------------------');
+
+      errorData = {
+        error: {
+          message: 'Upstream API returned an error while in stream mode. See proxy logs.',
+          type: 'upstream_stream_error'
+        }
+      };
     } else {
-      console.error('No response data received from NVIDIA. This might be a network/timeout issue.');
+      console.error('--- NVIDIA NIM Error Details ---');
+
+      try {
+        console.error(JSON.stringify(error.response.data, null, 2));
+      } catch (stringifyError) {
+        console.error('Could not stringify error response data.');
+      }
+
+      console.error('--------------------------------');
+
+      errorData = error.response.data;
+    }
+  } else {
+    console.error('No response data received from NVIDIA. This might be a network/timeout issue.');
+  }
+
+  const statusCode = error.response?.status || 500;
+
+  if (res.headersSent) {
+    if (requestedStream) {
+      res.write(
+        `data: ${JSON.stringify({
+          error: {
+            message:
+              errorData?.error?.message ||
+              error.message ||
+              'Internal server error',
+            type: errorData?.error?.type || 'invalid_request_error',
+            code: statusCode
+          }
+        })}\n\n`
+      );
     }
 
-    // Send the error back to your frontend/client safely
-    res.status(error.response?.status || 500).json({
-      error: {
-        message: errorData?.error?.message || error.message || 'Internal server error',
-        type: errorData?.error?.type || 'invalid_request_error',
-        code: error.response?.status || 500,
-        nim_error_details: errorData // Safe to send because it's no longer a raw Stream
-      }
-    });
+    return res.end();
   }
+
+  return res.status(statusCode).json({
+    error: {
+      message:
+        errorData?.error?.message ||
+        errorData?.message ||
+        error.message ||
+        'Internal server error',
+      type:
+        errorData?.error?.type ||
+        'invalid_request_error',
+      code: statusCode,
+      nim_error_details: errorData
+    }
+  });
+}
+
 });
 
 // Catch-all for unsupported endpoints
