@@ -217,13 +217,26 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     
   } catch (error) {
-    console.error('Proxy error:', error.message);
-    
-    res.status(error.response?.status || 500).json({
+    const status = error.response?.status || 500;
+
+    const errorMessage =
+      error.response?.data?.error?.message ||
+      error.response?.data?.message ||
+      error.response?.data ||
+      error.message ||
+      'Internal server error';
+
+    console.error('Proxy error:', errorMessage);
+
+    if (error.response?.data) {
+      console.error('Full API error:', JSON.stringify(error.response.data, null, 2));
+    }
+
+    res.status(status).json({
       error: {
-        message: error.message || 'Internal server error',
-        type: 'invalid_request_error',
-        code: error.response?.status || 500
+        message: errorMessage,
+        type: error.response?.data?.error?.type || 'invalid_request_error',
+        code: error.response?.data?.error?.code || status
       }
     });
   }
