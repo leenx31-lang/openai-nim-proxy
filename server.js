@@ -33,7 +33,7 @@ const MODEL_MAPPING = {
   'gpt-4o-mini': 'deepseek-ai/deepseek-v4-pro-0813',
   'claude-3-opus': 'openai/gpt-oss-120b',
   'claude-3-sonnet': 'openai/gpt-oss-20b',
-  'gemini-pro': 'moonshotai/kimi-k2.6'
+  'gemini-pro': 'moonshotai/kimi-k3'
 };
 
 // -----------------------------
