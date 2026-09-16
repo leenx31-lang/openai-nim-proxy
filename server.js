@@ -22,7 +22,7 @@ const ENABLE_THINKING_MODE = true;
 
 // Model mapping
 const MODEL_MAPPING = {
-  'gpt-3.5-turbo': 'z-ai/glm-5.2',
+  'gpt-3.5-turbo': 'z-ai/glm-5.3',
   'gpt-5': 'z-ai/glm-4_7',
   'gpt-5-turbo': 'z-ai/glm-4.7',
   'gpt-4': 'qwen/qwen3.5-122b-a10b',
