@@ -22,8 +22,8 @@ const ENABLE_THINKING_MODE = true;
 
 // Model mapping
 const MODEL_MAPPING = {
-  'gpt-3.5-turbo': 'z-ai/glm-5.3',
-  'gpt-5': 'z-ai/glm-4_7',
+  'gpt-3.5-turbo': 'stepfun-ai/step-5-preview',
+  'gpt-5': 'z-ai/glm-5.3-flash',
   'gpt-5-turbo': 'z-ai/glm-4.7',
   'gpt-4': 'qwen/qwen3.5-122b-a10b',
   'gpt-4.5': 'qwen/qwen3.5-397b-a17b',
@@ -267,7 +267,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
 
     // Smart model selection with fallback
-    let nimModel = MODEL_MAPPING[model] || model;
+    let nimModel = MODEL_MAPPING[model];
 
     if (!nimModel) {
       try {
