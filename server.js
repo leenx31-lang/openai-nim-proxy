@@ -267,7 +267,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
 
     // Smart model selection with fallback
-    let nimModel = MODEL_MAPPING[model];
+    let nimModel = MODEL_MAPPING[model] || model;
 
     if (!nimModel) {
       try {
